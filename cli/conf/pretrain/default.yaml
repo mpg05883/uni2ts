@@ -2,8 +2,8 @@ hydra:
   run:
     dir: outputs/pretrain/${hydra:runtime.choices.model}/${hydra:runtime.choices.data}/${run_name}
 defaults:
-  - model: ???
-  - data: ???
+  - model: ???  # Allows us to override the model config in the cmd line
+  - data: ???  # Allows us to override the data config in the cmd line
   - val_data: null
   - _self_
 run_name: ???
@@ -12,7 +12,7 @@ tf32: true
 compile: false  # set to mode: default, reduce-overhead, max-autotune
 ckpt_path: null  # set to "last" to resume training
 trainer:
-  _target_: lightning.Trainer
+  _target_: lightning.Trainer  # _target_ specifies the Python class/function to instantiate when using hydra.utisl.instantiate()
   accelerator: auto
   strategy: auto
   devices: auto

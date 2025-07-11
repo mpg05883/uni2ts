@@ -114,22 +114,36 @@ class DataModule(L.LightningDataModule):
             * self.trainer.accumulate_grad_batches
         )
 
-
+# Transforms main function into a Hydra-managed entry point
+# Sets Hydra version and the deafult config
+# This config can import other configs, define default values, and use overrides
+# from the cmd line
 @hydra.main(version_base="1.3", config_name="default.yaml")
 def main(cfg: DictConfig):
+    # Optionally enable 32-bit floats
     if cfg.tf32:
         assert cfg.trainer.precision == 32
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
-
+    
+    # Instantiate lightning module using Hydra's instantiate function and 
+    # convert all nested configs into Python primitives 
     model: L.LightningModule = instantiate(cfg.model, _convert_="all")
 
+    # Optionally use torch.compile to use optimized kernels
     if cfg.compile:
         model.module.compile(mode=cfg.compile)
+        
+    # Instaitiate trainer 
     trainer: L.Trainer = instantiate(cfg.trainer)
+    
+    # Instantiate concat dataset builder and pass _args_ to ctor
+    # Use the model's transformation map on the training datasets 
     train_dataset: Dataset = instantiate(cfg.data).load_dataset(
         model.train_transform_map
     )
+    
+    
     val_dataset: Optional[Dataset | list[Dataset]] = (
         tree_map(
             lambda ds: ds.load_dataset(model.val_transform_map),
