@@ -19,11 +19,25 @@
 #SBATCH --mail-user=mpgee@usc.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 
-python -m cli.eval \
-  run_name=example_eval_2 \
-  model=moirai_1.0_R_small \
-  model.patch_size=32 \
-  model.context_length=1000 \
-  data=lsf_test \
-  data.dataset_name=ETTh1 \
-  data.prediction_length=96
+mkdir -p logs
+
+# Load helper functions
+source ./scripts/utils.sh
+
+delete_lightning_logs
+delete_wandb_logs
+
+# Load conda environment
+source /sw/external/python/anaconda3/etc/profile.d/conda.sh
+conda activate uni2ts
+
+# Redirect wandb cache
+export WANDB_CACHE_DIR=/tmp
+
+log_job_info
+
+python -m cli.train \
+  -cp conf/pretrain \
+  run_name=first_run \
+  model=moirai_small \
+  data=lotsa_v1_weighted
